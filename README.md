@@ -8,4 +8,8 @@ a simple TCP Echo Service from RFC 862.
 
 ## 01 Prime Time
 
-- a custom `readLines` is handy
+- a custom `readLines` function is handy
+
+## 02 Means to an End
+
+- a custom `readMessage` function is handy
