@@ -20,5 +20,5 @@ const server = createServer((socket) => {
 const PORT = 8888
 
 server.listen(PORT, () => {
-  console.log(`TCP echo server listening on port ${PORT}`)
+  console.log(`00: server listening on port ${PORT}`)
 })

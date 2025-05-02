@@ -74,5 +74,5 @@ function isPrime(num: number): boolean {
 const PORT = 8888
 
 server.listen(PORT, () => {
-  console.log(`TCP echo server listening on port ${PORT}`)
+  console.log(`01: server listening on port ${PORT}`)
 })

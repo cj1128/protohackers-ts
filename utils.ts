@@ -54,6 +54,11 @@ export class SlidingBufferReader {
     return slice
   }
 
+  peek(length: number): Buffer | null {
+    if (this.available < length) return null
+    return this.buffer.subarray(this.readOffset, this.readOffset + length)
+  }
+
   /**
    * Returns how many unread bytes are currently buffered
    */
@@ -87,5 +92,34 @@ export class SlidingBufferReader {
     this.buffer = newBuffer
     this.writeOffset = unread
     this.readOffset = 0
+  }
+}
+
+export class LineReader {
+  private readonly reader = new SlidingBufferReader()
+
+  append(chunk: Buffer) {
+    this.reader.append(chunk)
+  }
+
+  readLine(): string | null {
+    const available = this.reader.available
+    const buffer = this.reader.peek(available)
+    if (!buffer) return null
+
+    const newlineIndex = buffer.indexOf(0x0a) // \n
+
+    if (newlineIndex === -1) return null
+
+    const lineBuf = this.reader.read(newlineIndex + 1)
+    if (!lineBuf) return null
+
+    // Remove trailing \r if present (support CRLF)
+    const end =
+      newlineIndex > 0 && lineBuf[newlineIndex - 1] === 0x0d
+        ? newlineIndex - 1
+        : newlineIndex
+
+    return lineBuf.subarray(0, end).toString("utf8")
   }
 }

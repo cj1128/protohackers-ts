@@ -13,3 +13,5 @@ a simple TCP Echo Service from RFC 862.
 ## 02 Means to an End
 
 - a custom `SlidingBufferReader` is handy
+
+## 03 Budget Chat
