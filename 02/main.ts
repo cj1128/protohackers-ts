@@ -1,5 +1,5 @@
 import { createServer, Socket } from "node:net"
-import { fromInt32 } from "../utils"
+import { fromInt32, SlidingBufferReader } from "../utils"
 
 type Message = {
   type: string
@@ -9,26 +9,24 @@ type Message = {
 
 const MSG_LENGTH = 9
 async function* readMessage(socket: Socket): AsyncGenerator<Message> {
-  let buffer = Buffer.alloc(0)
+  const reader = new SlidingBufferReader(1024)
 
   for await (const chunk of socket) {
-    buffer = Buffer.concat([buffer, chunk])
+    reader.append(chunk)
 
-    while (buffer.byteLength >= MSG_LENGTH) {
-      const type = String.fromCharCode(buffer[0]!)
+    while (true) {
+      const buf = reader.read(MSG_LENGTH)
+      if (buf == null) {
+        break
+      }
+      const type = String.fromCharCode(buf[0]!)
       // make sure to use `buffer.byteOffset + 1` instead of `1`
-      const dv = new DataView(buffer.buffer, buffer.byteOffset + 1, 8)
+      const dv = new DataView(buf.buffer, buf.byteOffset + 1, 8)
       const int1 = dv.getInt32(0, false) // false means big-endian
       const int2 = dv.getInt32(4, false)
 
       yield { type, int1, int2 }
-
-      buffer = buffer.subarray(MSG_LENGTH)
     }
-  }
-
-  if (buffer.length > 0) {
-    // discard
   }
 }
 

@@ -12,4 +12,4 @@ a simple TCP Echo Service from RFC 862.
 
 ## 02 Means to an End
 
-- a custom `readMessage` function is handy
+- a custom `SlidingBufferReader` is handy
