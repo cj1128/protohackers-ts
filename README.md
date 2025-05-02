@@ -15,3 +15,9 @@ a simple TCP Echo Service from RFC 862.
 - a custom `SlidingBufferReader` is handy
 
 ## 03 Budget Chat
+
+- implement a `LineReader` to read lines
+
+## 04 Unusual Database Program
+
+- NOTE: in Node, the "message" event always corresponds to a single UDP packet
