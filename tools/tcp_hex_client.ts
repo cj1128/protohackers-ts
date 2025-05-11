@@ -1,10 +1,8 @@
-// Run with: bun tcp_hex_client.ts 127.0.0.1 1234
+// Run with: bun tcp_hex_client.ts [127.0.0.1] [1234]
 
-const [_, __, host, portStr] = Bun.argv
-if (!host || !portStr) {
-  console.error("Usage: bun tcp_hex_client.ts <host> <port>")
-  process.exit(1)
-}
+let [_, __, host, portStr] = Bun.argv
+host = host || "localhost"
+portStr = portStr || "8888"
 
 const port = parseInt(portStr, 10)
 

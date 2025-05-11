@@ -2,18 +2,17 @@ import { createServer, Socket } from "node:net"
 import { SlidingBufferReader } from "../utils"
 import assert from "assert"
 import _ from "lodash"
-import { TokenClass } from "typescript"
 
 const MessageEncoder = {
   error(str: string): Buffer {
-    const prefix = Buffer.from([0x10])
+    const prefix = Buffer.from([OutMessageType.Error])
     return Buffer.concat([prefix, MessageEncoder.str(str)])
   },
   heartbeat() {
-    return Buffer.from([0x41])
+    return Buffer.from([OutMessageType.Heartbeat])
   },
   ticket(ticket: TicketExt) {
-    const prefix = Buffer.from([0x21])
+    const prefix = Buffer.from([OutMessageType.Ticket])
     return Buffer.concat([
       prefix,
       MessageEncoder.str(ticket.plate),
@@ -177,11 +176,12 @@ type IAmDispatcher = {
   roads: u16[]
 }
 
-type OutMessage = Error | Ticket | Heartbeat
-type Error = {
-  type: 0x10
-  msg: string
+enum OutMessageType {
+  Error = 0x10,
+  Ticket = 0x21,
+  Heartbeat = 0x41,
 }
+
 type Ticket = {
   type: 0x21
   plate: string
@@ -192,8 +192,10 @@ type Ticket = {
   timestamp2: u32
   speed: u16
 }
-type Heartbeat = {
-  type: 0x41
+interface TicketExt extends Ticket {
+  id: number
+  startDay: number
+  endDay: number
 }
 
 type ClientInfo = {
@@ -208,11 +210,6 @@ type SpeedRecord = {
   mile: u16
   timestamp: u32
   limit: u16
-}
-interface TicketExt extends Ticket {
-  id: number
-  startDay: number
-  endDay: number
 }
 
 function getDay(timestamp: number): number {
@@ -420,7 +417,7 @@ const server = createServer(async (client) => {
   log("client connected")
 
   function onError(msg: string) {
-    log("error occurred", { msg })
+    log("error occurred, disconnect", { msg })
     client.write(MessageEncoder.error(msg))
     client.end()
   }

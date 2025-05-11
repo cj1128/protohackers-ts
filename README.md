@@ -1,10 +1,10 @@
 # [Protohackers](https://protohackers.com/) in TypeScript
 
-Use Bun to run, every server is listening on port 8888.
+Bun + TypeScript, every server is listening on port 8888.
 
 ## 00 Smoke Test
 
-a simple TCP Echo Service from RFC 862.
+- a simple TCP Echo Service from RFC 862.
 
 ## 01 Prime Time
 
@@ -16,7 +16,7 @@ a simple TCP Echo Service from RFC 862.
 
 ## 03 Budget Chat
 
-- implement a `LineReader` to read lines
+- implement a `LineReader` based on `SlidingBufferReader` to read lines
 
 ## 04 Unusual Database Program
 
@@ -28,4 +28,5 @@ a simple TCP Echo Service from RFC 862.
 
 ## 06 Speed Daemon
 
+- Packet parsing needs some work but it's straightforward
 - Need to write a client to send bytes to test the server, `bun run tools/tcp_hex_client.ts`
