@@ -1,3 +1,5 @@
+import type { Socket } from "node:net"
+
 export function tryPraseJSON(str: string): [any, unknown | null] {
   try {
     const parsed = JSON.parse(str)
@@ -52,6 +54,21 @@ export class SlidingBufferReader {
     }
 
     return slice
+  }
+  readU8(): number | null {
+    const buf = this.read(1)
+    if (buf == null) return null
+    return buf[0]!
+  }
+  readU16BE(): number | null {
+    const buf = this.read(2)
+    if (buf == null) return null
+    return buf.readUint16BE()
+  }
+  readU32BE(): number | null {
+    const buf = this.read(4)
+    if (buf == null) return null
+    return buf.readUint32BE()
   }
 
   peek(length: number): Buffer | null {
@@ -122,4 +139,19 @@ export class LineReader {
 
     return lineBuf.subarray(0, end).toString("utf8")
   }
+}
+
+export async function* readLines(socket: Socket): AsyncGenerator<string> {
+  const lineReader = new LineReader()
+
+  for await (const chunk of socket) {
+    lineReader.append(chunk)
+
+    let line
+    while ((line = lineReader.readLine()) !== null) {
+      yield line
+    }
+  }
+
+  // discard remaining data
 }

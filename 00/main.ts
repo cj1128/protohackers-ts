@@ -1,7 +1,7 @@
 import { createServer } from "node:net"
 
 const server = createServer((socket) => {
-  console.log("Client connected:", socket.remoteAddress, socket.remotePort)
+  console.log("Client connected")
 
   socket.on("data", (data) => {
     console.log("Received:", data)
@@ -20,5 +20,5 @@ const server = createServer((socket) => {
 const PORT = 8888
 
 server.listen(PORT, () => {
-  console.log(`00: server listening on port ${PORT}`)
+  console.log(`Server listening on port ${PORT}`)
 })

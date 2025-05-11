@@ -102,5 +102,5 @@ const server = createServer(async (socket) => {
 const PORT = 8888
 
 server.listen(PORT, () => {
-  console.log(`02: server listening on port ${PORT}`)
+  console.log(`Server listening on port ${PORT}`)
 })

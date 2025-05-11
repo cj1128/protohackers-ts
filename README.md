@@ -21,3 +21,11 @@ a simple TCP Echo Service from RFC 862.
 ## 04 Unusual Database Program
 
 - NOTE: in Node, the "message" event always corresponds to a single UDP packet
+
+## 05 Mob in the Middle
+
+- I cann't believe how short the code is
+
+## 06 Speed Daemon
+
+- Need to write a client to send bytes to test the server, `bun run tools/tcp_hex_client.ts`

@@ -1,20 +1,5 @@
 import { createServer, Socket } from "node:net"
-import { LineReader } from "../utils.ts"
-
-async function* readLines(socket: Socket): AsyncGenerator<string> {
-  const lineReader = new LineReader()
-
-  for await (const chunk of socket) {
-    lineReader.append(chunk)
-
-    let line
-    while ((line = lineReader.readLine()) !== null) {
-      yield line
-    }
-  }
-
-  // discard remaining data
-}
+import { readLines } from "../utils.ts"
 
 function writeMsg(socket: Socket, msg: string) {
   socket.write(msg + "\n")
@@ -93,5 +78,5 @@ const server = createServer(async (socket) => {
 const PORT = 8888
 
 server.listen(PORT, () => {
-  console.log(`03: server listening on port ${PORT}`)
+  console.log(`Server listening on port ${PORT}`)
 })

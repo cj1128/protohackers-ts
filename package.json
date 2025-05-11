@@ -4,9 +4,13 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "@types/lodash": "^4.17.16"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
   }
 }
