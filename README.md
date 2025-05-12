@@ -30,3 +30,5 @@ Bun + TypeScript, every server is listening on port 8888.
 
 - Packet parsing needs some work but it's straightforward
 - Need to write a client to send bytes to test the server, `bun run tools/tcp_hex_client.ts`
+
+## 07 Line Reversal

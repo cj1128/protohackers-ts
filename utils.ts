@@ -119,25 +119,17 @@ export class LineReader {
     this.reader.append(chunk)
   }
 
+  // "\n" separated lines
   readLine(): string | null {
-    const available = this.reader.available
-    const buffer = this.reader.peek(available)
-    if (!buffer) return null
-
+    const buffer = this.reader.peek(this.reader.available)!
     const newlineIndex = buffer.indexOf(0x0a) // \n
 
     if (newlineIndex === -1) return null
 
-    const lineBuf = this.reader.read(newlineIndex + 1)
-    if (!lineBuf) return null
+    const line = this.reader.read(newlineIndex)!.toString()
+    this.reader.read(1) // discard "\n"
 
-    // Remove trailing \r if present (support CRLF)
-    const end =
-      newlineIndex > 0 && lineBuf[newlineIndex - 1] === 0x0d
-        ? newlineIndex - 1
-        : newlineIndex
-
-    return lineBuf.subarray(0, end).toString("utf8")
+    return line
   }
 }
 
