@@ -21,8 +21,8 @@ export class SlidingBufferReader {
   private readOffset: number
   private writeOffset: number
 
-  constructor(initialSize = 1024) {
-    this.buffer = Buffer.alloc(initialSize)
+  constructor(initSize = 1024) {
+    this.buffer = Buffer.alloc(initSize)
     this.readOffset = 0
     this.writeOffset = 0
   }

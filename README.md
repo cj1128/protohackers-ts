@@ -4,19 +4,19 @@ Bun + TypeScript, every server is listening on port 8888.
 
 ## 00 Smoke Test
 
-- a simple TCP Echo Service from RFC 862.
+- A simple TCP Echo Service from RFC 862.
 
 ## 01 Prime Time
 
-- a custom `readLines` function is handy
+- A custom `readLines` function is handy
 
 ## 02 Means to an End
 
-- a custom `SlidingBufferReader` is handy
+- A custom `SlidingBufferReader` is handy
 
 ## 03 Budget Chat
 
-- implement a `LineReader` based on `SlidingBufferReader` to read lines
+- A custom `LineReader` based on `SlidingBufferReader` is handy
 
 ## 04 Unusual Database Program
 
@@ -34,3 +34,7 @@ Bun + TypeScript, every server is listening on port 8888.
 ## 07 Line Reversal
 
 - How to build a reliable byte stream over UDP? and how to provide this abstraction to application layer?
+
+## 08 Insecure Sockets Layer
+
+- Main work is to implement the cipher, it's not complex

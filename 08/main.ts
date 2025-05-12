@@ -1,6 +1,7 @@
 import { createServer, Socket } from "node:net"
 import assert from "assert"
-import { escapeLeadingUnderscores } from "typescript"
+import { LineReader } from "../utils"
+import _ from "lodash"
 
 export enum OperationType {
   reversebits,
@@ -86,8 +87,7 @@ export class Cipher {
     this.operations = parseCipherSpec(spec)
   }
 
-  // will increase encodePos
-  encode(input: Buffer) {
+  encode(input: Buffer, increasePos = true) {
     const result = Buffer.from(input)
     const pos = this.encodePos
     for (const op of this.operations) {
@@ -129,7 +129,9 @@ export class Cipher {
           break
       }
     }
-    this.encodePos += input.length
+    if (increasePos) {
+      this.encodePos += input.length
+    }
     return result
   }
 
@@ -181,11 +183,63 @@ export class Cipher {
   }
 }
 
+function findCipherSpecIdx(buf: Buffer) {
+  for (let i = 0; i < buf.length; i++) {
+    if (buf[i] === 0x00) return i
+    // skip one
+    if (buf[i] === 0x02 || buf[i] === 0x04) {
+      i++
+    }
+  }
+  return -1
+}
+
+let clientIdSeed = 0
 const server = createServer(async (socket) => {
-  // const clientId = clientIdSeed++
-  // function log(...msgs: any[]) {
-  //   console.log(`[${clientId}]`, ...msgs)
-  // }
+  const clientId = clientIdSeed++
+  let buf = Buffer.alloc(0)
+  let cipher
+  let lineReader
+
+  function log(...args: any[]) {
+    console.log(`[${clientId}]`, ...args)
+  }
+
+  for await (const chunk of socket) {
+    log("got data", { chunk })
+
+    if (cipher == null || lineReader == null) {
+      buf = Buffer.concat([buf, chunk])
+      const idx = findCipherSpecIdx(buf)
+      if (idx >= 0) {
+        const cipherSpec = buf.subarray(0, idx)
+        cipher = new Cipher(cipherSpec)
+        lineReader = new LineReader()
+        lineReader.append(cipher.decode(buf.subarray(idx + 1)))
+        log("cipher inited", { spec: cipherSpec })
+
+        // check no-op cipher
+        {
+          const test = Buffer.from([0x01, 0x02, 0x03, 0x04])
+          if (cipher.encode(test, false).equals(test)) {
+            log("error: no-op cipher found")
+            socket.end()
+            return
+          }
+        }
+      }
+    } else {
+      lineReader.append(cipher.decode(chunk))
+      let line
+      while ((line = lineReader.readLine()) !== null) {
+        const toys = line.split(",")
+        const sorted = _.orderBy(toys, [(str) => parseInt(str)], ["desc"])
+        const reply = sorted[0] + "\n"
+        log("got line", { line, reply })
+        socket.write(cipher.encode(Buffer.from(reply)))
+      }
+    }
+  }
 })
 
 const PORT = 8888
