@@ -32,3 +32,5 @@ Bun + TypeScript, every server is listening on port 8888.
 - Need to write a client to send bytes to test the server, `bun run tools/tcp_hex_client.ts`
 
 ## 07 Line Reversal
+
+- How to build a reliable byte stream over UDP? and how to provide this abstraction to application layer?

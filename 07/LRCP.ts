@@ -1,6 +1,5 @@
 import assert from "assert"
 import dgram from "dgram"
-import { LineReader } from "../utils"
 
 const RetransmissionTimeout = 3 * 1000 // in ms
 const SessionExpiryTimeout = 60 * 1000 // in ms
@@ -19,7 +18,6 @@ export class Session implements AsyncIterable<string> {
   private sendLength: number = 0
   private sendDataMsgs: { msg: Buffer; length: number }[] = []
   private readPos: number = 0
-  private lineReader = new LineReader()
   private maxAckLength: number = 0
 
   constructor(
@@ -69,15 +67,18 @@ export class Session implements AsyncIterable<string> {
     if (this.readPos === pos) {
       this.readPos += data.length
       this._ack(this.readPos)
-      this.lineReader.append(Buffer.from(data))
-
-      let line
-      while ((line = this.lineReader.readLine()) != null) {
-        // give it to application layer
-        this._onLine(line)
-      }
+      this._emit(data)
     } else {
       this._ack(this.readPos)
+    }
+  }
+  // emit data to application layer
+  _emit(data: string) {
+    if (this.pendingResolver) {
+      this.pendingResolver({ value: data, done: false })
+      this.pendingResolver = null
+    } else {
+      this.queue.push(data)
     }
   }
 
@@ -109,15 +110,6 @@ export class Session implements AsyncIterable<string> {
           this._rawSend(lrcp.msg)
         }
       }
-    }
-  }
-
-  _onLine(line: string) {
-    if (this.pendingResolver) {
-      this.pendingResolver({ value: line, done: false })
-      this.pendingResolver = null
-    } else {
-      this.queue.push(line)
     }
   }
 
