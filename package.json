@@ -5,12 +5,15 @@
   "private": true,
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/lodash": "^4.17.16"
+    "@types/lodash": "^4.17.16",
+    "@types/priorityqueuejs": "1.0.4"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "priorityqueuejs": "^2.0.0",
+    "zod": "^3.24.4"
   }
 }

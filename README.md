@@ -38,3 +38,7 @@ Bun + TypeScript, every server is listening on port 8888.
 ## 08 Insecure Sockets Layer
 
 - Main work is to implement the cipher, it's not complex
+
+## 09 Job Centre
+
+- Need to increase somaxconn in Mac `sudo sysctl kern.ipc.somaxconn=2000`

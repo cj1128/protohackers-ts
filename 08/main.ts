@@ -1,6 +1,6 @@
-import { createServer, Socket } from "node:net"
+import { createServer } from "node:net"
 import assert from "assert"
-import { LineReader } from "../utils"
+import { LineReader, reverseByte } from "../utils"
 import _ from "lodash"
 
 export enum OperationType {
@@ -17,7 +17,7 @@ type Operation =
   | { type: OperationType.addN; n: number }
   | { type: OperationType.addpos }
 
-// will throw if buf is not a valid ciper spec
+// will throw if 'spec' is not a valid ciper spec
 export function parseCipherSpec(spec: Buffer): Operation[] {
   const result: Operation[] = []
   let i = 0
@@ -69,13 +69,6 @@ export function parseCipherSpec(spec: Buffer): Operation[] {
     }
   }
   return result
-}
-
-function reverseByte(byte: number) {
-  byte = ((byte & 0b11110000) >> 4) | ((byte & 0b00001111) << 4)
-  byte = ((byte & 0b11001100) >> 2) | ((byte & 0b00110011) << 2)
-  byte = ((byte & 0b10101010) >> 1) | ((byte & 0b01010101) << 1)
-  return byte
 }
 
 export class Cipher {
