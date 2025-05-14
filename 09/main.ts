@@ -202,7 +202,7 @@ const server = createServer(async (socket) => {
 
   for await (const line of readLines(socket)) {
     const req = parseRequest(line)
-    // log("req received", req)
+    log("req received", req)
 
     // invalid
     if (req == null) {
@@ -229,12 +229,12 @@ const server = createServer(async (socket) => {
 
           if (found) {
             jc.assignJob(socket, found)
-            // log("job assigned", found)
+            log("job assigned", found)
           } else if (req.wait) {
-            // log("wait for a job")
+            log("wait for a job")
             jc.addWaitingClient(socket, req.queues)
           } else {
-            // log("no job found")
+            log("no job found")
             sendResponse(socket, { status: "no-job" })
           }
         }

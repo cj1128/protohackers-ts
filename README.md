@@ -41,4 +41,5 @@ Bun + TypeScript, every server is listening on port 8888.
 
 ## 09 Job Centre
 
-- Need to increase somaxconn in Mac `sudo sysctl kern.ipc.somaxconn=2000`
+- for previous problems, I was using my home computer with router port forwarding to do the test, but this one involves large connections (1000 clients) and it seems that my router can not handle this much connections. So for this test, I need to use a server to do the test.
+- `bun build --target=bun main.ts --outfile=bundle.js` to bundle the code and run it in the server

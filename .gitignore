@@ -1,3 +1,6 @@
+# bundled file used for server deployment
+bundle.js
+
 # dependencies (bun install)
 node_modules
 tmp
