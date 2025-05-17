@@ -43,3 +43,56 @@ Bun + TypeScript, every server is listening on port 8888.
 
 - for previous problems, I was using my home computer with router port forwarding to do the test, but this one involves large connections (1000 clients) and it seems that my router can not handle this much connections. So for this test, I need to use a server to do the test.
 - `bun build --target=bun main.ts --outfile=bundle.js` to bundle the code and run it in the server
+
+## 10: Voracious Code Storage
+
+- DO not use telent, "\r\n"
+
+```
+> x
+> ← Received: ERR illegal method: x
+
+> help
+> ← Received: OK usage: HELP|GET|PUT|LIST
+> ← Received: READY
+
+> ← Received: ERR usage: GET file [revision]
+READY
+> get /a r2
+> ← Received: OK 1
+> ← Received: aREADY
+> get /a r3
+> ← Received: OK 10
+helloworldREADY
+> get /a r4
+> ← Received: ERR no such revision
+READY
+
+
+
+
+> put
+> ← Received: ERR usage: PUT file length newline data
+> ← Received: READY
+> put abc 10
+> ← Received: ERR illegal file name
+>
+> put /a 0
+> ← Received: OK r4
+READY
+> put /a -1
+> ← Received: OK r4
+READY
+> put /a 2
+> abc
+> ← Received: OK r5
+READY
+ERR illegal method: c
+
+
+
+> list
+> ← Received: ERR usage: LIST dir
+> ← Received: READY
+
+```

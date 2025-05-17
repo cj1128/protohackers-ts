@@ -1,0 +1,31 @@
+✅ Connected to vcs.protohackers.com:30307
+> ← Received: READY
+> help
+> ← Received: OK usage: HELP|GET|PUT|LIST
+> ← Received: READY
+> HELP
+> ← Received: OK usage: HELP|GET|PUT|LIST
+> ← Received: READY
+> list
+> ← Received: ERR usage: LIST dir
+READY
+> list /a
+> ← Received: OK 0
+READY
+> list abcd
+> ← Received: ERR illegal dir name
+> list /
+> ← Received: OK 0
+READY
+> get /a
+> ← Received: ERR no such file
+READY
+> put /a
+> ← Received: ERR usage: PUT file length newline data
+READY
+> put /a 10
+> helloworld
+> ← Received: OK r1
+> ← Received: READY
+ERR illegal method:
+> ❌ Connection closed

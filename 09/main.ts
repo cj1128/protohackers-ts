@@ -53,11 +53,6 @@ type Job = {
   queue: string
 }
 
-type WaitingClient = {
-  socket: Socket
-  queues: string[]
-}
-
 class JobCentre {
   private queues = new Map<string, PriorityQueue<Job>>()
   // key: jobId

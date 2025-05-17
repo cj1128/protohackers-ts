@@ -71,6 +71,16 @@ export class SlidingBufferReader {
     return buf.readUint32BE()
   }
 
+  // read text before "\n", return value does not include "\n"
+  readLine(): string | null {
+    const buffer = this.peek(this.available)!
+    const newlineIndex = buffer.indexOf(0x0a) // \n
+    if (newlineIndex === -1) return null
+    const line = this.read(newlineIndex)!.toString()
+    this.read(1) // discard "\n"
+    return line
+  }
+
   peek(length: number): Buffer | null {
     if (this.available < length) return null
     return this.buffer.subarray(this.readOffset, this.readOffset + length)
