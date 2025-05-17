@@ -43,8 +43,11 @@ const conn = await Bun.connect({
 process.stdin.setEncoding("utf8")
 process.stdin.resume()
 process.stdin.on("data", (line) => {
-  const input = line.toString()
-  // console.log(`send: ${JSON.stringify(input)}`)
+  let input: string | Buffer = line.toString()
+  if (input.startsWith("hex")) {
+    input = Buffer.from(input.slice(3), "hex")
+  }
+  console.log(`send: ${JSON.stringify(input)}`)
   conn.write(Buffer.from(input))
   prompt()
 })

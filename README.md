@@ -67,7 +67,16 @@ helloworldREADY
 > get /a r4
 > ← Received: ERR no such revision
 READY
-
+> get abc
+> ← Received: ERR illegal file name
+> get /abc
+> ← Received: ERR no such file
+> put /a 2
+> ab> ← Received: OK r2
+> ← Received: READY
+> get /a r2
+> ← Received: OK 2
+abREADY
 
 
 
@@ -88,11 +97,27 @@ READY
 > ← Received: OK r5
 READY
 ERR illegal method: c
+Received: ERR text files only
 
 
-
+> list abc
+> ← Received: ERR illegal dir name
 > list
 > ← Received: ERR usage: LIST dir
 > ← Received: READY
+> put /b 0
+> ← Received: OK r1
+> ← Received: READY
+> list /
+> ← Received: OK 2
+a r4
+b r1
+READY
+> list /a/b
+> ← Received: OK 2
+> ← Received: c r1
+> ← Received: d/ DIR
+
+
 
 ```
