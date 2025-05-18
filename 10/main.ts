@@ -1,6 +1,5 @@
 import { createServer, Socket } from "node:net"
 import { SlidingBufferReader } from "../utils"
-import path from "node:path"
 import assert from "assert"
 
 enum MethodType {

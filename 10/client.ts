@@ -47,7 +47,7 @@ process.stdin.on("data", (line) => {
   if (input.startsWith("hex")) {
     input = Buffer.from(input.slice(3), "hex")
   }
-  console.log(`send: ${JSON.stringify(input)}`)
+  console.log(`> ---send---: ${JSON.stringify(input)}`)
   conn.write(Buffer.from(input))
   prompt()
 })
