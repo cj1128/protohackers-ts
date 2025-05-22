@@ -1,4 +1,5 @@
 import type { Socket } from "node:net"
+import assert from "assert"
 
 export function tryPraseJSON(str: string): [any, unknown | null] {
   try {
@@ -14,6 +15,42 @@ export function fromInt32(num: number, littleEndian = true): Uint8Array {
   const view = new DataView(buffer)
   view.setInt32(0, num, littleEndian)
   return new Uint8Array(buffer)
+}
+
+export class SocketNoDataError extends Error {}
+export class SocketReader {
+  private iter: any
+  private buf = new SlidingBufferReader()
+  constructor(socket: Socket) {
+    this.iter = socket[Symbol.asyncIterator]()
+  }
+
+  // will throw if there is no 4 bytes
+  async read(n: number): Promise<Buffer> {
+    while (true) {
+      const result = this.buf.read(n)
+      if (result != null) return result
+
+      // load more data from socket
+      const value = await this.iter.next()
+      if (value.done) {
+        throw new SocketNoDataError()
+      }
+
+      this.buf.append(value.value)
+    }
+  }
+
+  async readU32(): Promise<number> {
+    const buf = await this.read(4)
+    return buf.readUint32BE()
+  }
+  async readStr(): Promise<string> {
+    const len = await this.readU32()
+    if (len === 0) return ""
+    const buf = await this.read(len)
+    return buf.toString()
+  }
 }
 
 export class SlidingBufferReader {
@@ -39,6 +76,7 @@ export class SlidingBufferReader {
    * Try to read a fixed-length block. Returns `null` if not enough data.
    */
   read(length: number): Buffer | null {
+    assert.ok(length >= 0)
     if (this.available < length) return null
 
     const slice = this.buffer.subarray(
