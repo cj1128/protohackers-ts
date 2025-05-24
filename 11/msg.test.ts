@@ -2,14 +2,17 @@ import { expect, test, describe } from "bun:test"
 import {
   MessageEncoder,
   MessageType,
-  parseMessageHelloWillThrow,
-  parseMessageTargetPopulationsWillThrow,
+  parseMessageHello,
+  parseMessagePolicyResult,
+  parseMessageSiteVisit,
+  parseMessageTargetPopulations,
+  PolicyAction,
 } from "./msg"
 
 describe("parse msg Hello", () => {
   test("ok", () => {
     expect(
-      parseMessageHelloWillThrow(
+      parseMessageHello(
         Buffer.from([
           0x50, 0x00, 0x00, 0x00, 0x19, 0x00, 0x00, 0x00, 0x0b, 0x70, 0x65,
           0x73, 0x74, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x00, 0x00,
@@ -25,13 +28,13 @@ describe("parse msg Hello", () => {
 
   test("invalid total length", () => {
     expect(() =>
-      parseMessageHelloWillThrow(Buffer.from([0x50, 0x00, 0x00, 0x00, 0x00]))
+      parseMessageHello(Buffer.from([0x50, 0x00, 0x00, 0x00, 0x00]))
     ).toThrow()
   })
 
   test("str length too big", () => {
     expect(() =>
-      parseMessageHelloWillThrow(
+      parseMessageHello(
         Buffer.from([
           0x50, 0x00, 0x00, 0x00, 0x19, 0x00, 0x00, 0x00, 0xab, 0x70, 0x65,
           0x73, 0x74, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x00, 0x00,
@@ -43,7 +46,7 @@ describe("parse msg Hello", () => {
 
   test("str length too small", () => {
     expect(() =>
-      parseMessageHelloWillThrow(
+      parseMessageHello(
         Buffer.from([
           0x50, 0x00, 0x00, 0x00, 0x19, 0x00, 0x00, 0x00, 0x0a, 0x70, 0x65,
           0x73, 0x74, 0x63, 0x6f, 0x6e, 0x74, 0x72, 0x6f, 0x6c, 0x00, 0x00,
@@ -57,7 +60,7 @@ describe("parse msg Hello", () => {
 describe("parse msg TargetPopulatons", () => {
   test("ok", () => {
     expect(
-      parseMessageTargetPopulationsWillThrow(
+      parseMessageTargetPopulations(
         Buffer.from([
           0x54, 0x00, 0x00, 0x00, 0x2c, 0x00, 0x00, 0x30, 0x39, 0x00, 0x00,
           0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x64, 0x6f, 0x67, 0x00, 0x00,
@@ -76,7 +79,59 @@ describe("parse msg TargetPopulatons", () => {
   })
 })
 
+describe("parse msg PolicyResult", () => {
+  test("ok", () => {
+    expect(
+      parseMessagePolicyResult(
+        Buffer.from([
+          0x57, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x7b, 0x24,
+        ])
+      )
+    ).toEqual({
+      type: MessageType.policyResult,
+      policy: 123,
+    })
+  })
+})
+
+describe("parse msg SiteVisit", () => {
+  test("ok", () => {
+    expect(
+      parseMessageSiteVisit(
+        Buffer.from([
+          0x58, 0x00, 0x00, 0x00, 0x24, 0x00, 0x00, 0x30, 0x39, 0x00, 0x00,
+          0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x64, 0x6f, 0x67, 0x00, 0x00,
+          0x00, 0x01, 0x00, 0x00, 0x00, 0x03, 0x72, 0x61, 0x74, 0x00, 0x00,
+          0x00, 0x05, 0x8c,
+        ])
+      )
+    ).toEqual({
+      type: MessageType.siteVisit,
+      site: 12345,
+      populations: [
+        { species: "dog", count: 1 },
+        { species: "rat", count: 5 },
+      ],
+    })
+  })
+})
+
 describe("Encoder", () => {
+  test("deletePolicy", () => {
+    expect(MessageEncoder.deletePolicy(123)).toEqual(
+      Buffer.from([0x56, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x7b, 0x25])
+    )
+  })
+
+  test("createPolicy", () => {
+    expect(MessageEncoder.createPolicy("dog", PolicyAction.conserve)).toEqual(
+      Buffer.from([
+        0x55, 0x00, 0x00, 0x00, 0x0e, 0x00, 0x00, 0x00, 0x03, 0x64, 0x6f, 0x67,
+        0xa0, 0xc0,
+      ])
+    )
+  })
+
   test("error", () => {
     expect(MessageEncoder.error("bad")).toEqual(
       Buffer.from([
@@ -84,7 +139,9 @@ describe("Encoder", () => {
         0x78,
       ])
     )
+  })
 
+  test("dialAuthority", () => {
     expect(MessageEncoder.dialAuthority(12345)).toEqual(
       Buffer.from([0x53, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x30, 0x39, 0x3a])
     )

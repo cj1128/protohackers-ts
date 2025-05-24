@@ -5,12 +5,29 @@ import assert from "assert"
 type u32 = number
 type u8 = number
 
-type Message = MessageHello | MessageOk | MessageTargetPopulations
+type Message =
+  | MessageHello
+  | MessageOk
+  | MessageTargetPopulations
+  | MessagePolicyResult
 
 type MessageHello = { type: MessageType.hello; protocol: string; version: u32 }
 type MessageOk = { type: MessageType.ok }
+type MessagePolicyResult = {
+  type: MessageType.policyResult
+  policy: u32
+}
+type MessageSiteVisit = {
+  type: MessageType.siteVisit
+  site: u32
+  populations: PopulationReport[]
+}
+type PopulationReport = {
+  species: string
+  count: u32
+}
 
-type Population = {
+type PopulationTarget = {
   species: string
   min: u32
   max: u32
@@ -18,7 +35,7 @@ type Population = {
 type MessageTargetPopulations = {
   type: MessageType.targetPopulations
   site: number
-  populations: Population[]
+  populations: PopulationTarget[]
 }
 
 export enum MessageType {
@@ -27,12 +44,33 @@ export enum MessageType {
   ok = 0x52,
   dialAuthority = 0x53,
   targetPopulations = 0x54,
+  createPolicy = 0x55,
+  deletePolicy = 0x56,
+  policyResult = 0x57,
+  siteVisit = 0x58,
+}
+
+export enum PolicyAction {
+  cull = 0x90,
+  conserve = 0xa0,
 }
 
 export const MessageEncoder = {
+  deletePolicy(policy: u32) {
+    return this.encode(MessageType.deletePolicy, this.u32(policy))
+  },
+
+  createPolicy(species: string, action: PolicyAction) {
+    return this.encode(
+      MessageType.createPolicy,
+      Buffer.concat([this.str(species), Buffer.from([action])])
+    )
+  },
+
   error(str: string): Buffer {
     return this.encode(MessageType.error, MessageEncoder.str(str))
   },
+
   dialAuthority(site: number) {
     return this.encode(MessageType.dialAuthority, MessageEncoder.u32(site))
   },
@@ -40,7 +78,6 @@ export const MessageEncoder = {
   // helpers
   //
   encode(type: u8, payload: Buffer): Buffer {
-    const prefix = Buffer.from([MessageType.error])
     // 1 type + 4 length + 1 checksum
     const totalLength = payload.length + 6
 
@@ -154,7 +191,33 @@ class ArrReader {
   }
 }
 
-export function parseMessageTargetPopulationsWillThrow(
+// all message parsers will throw
+
+export function parseMessageSiteVisit(buf: Buffer): MessageSiteVisit {
+  validateCheckSumWillThrow(buf)
+
+  assert.ok(buf.length >= 14)
+  const payloadBuf = buf.subarray(5)
+
+  const site = payloadBuf.readUint32BE()
+
+  const arrReader = new ArrReader(payloadBuf.subarray(4, -1), ["str", "u32"])
+
+  const readResult = arrReader.read()
+
+  const populations: PopulationReport[] = readResult.map((line) => ({
+    species: line[0],
+    count: line[1],
+  }))
+
+  return {
+    type: MessageType.siteVisit,
+    site,
+    populations,
+  }
+}
+
+export function parseMessageTargetPopulations(
   buf: Buffer
 ): MessageTargetPopulations {
   validateCheckSumWillThrow(buf)
@@ -172,7 +235,7 @@ export function parseMessageTargetPopulationsWillThrow(
 
   const readResult = arrReader.read()
 
-  const populations: Population[] = readResult.map((line) => ({
+  const populations: PopulationTarget[] = readResult.map((line) => ({
     species: line[0],
     min: line[1],
     max: line[2],
@@ -185,7 +248,30 @@ export function parseMessageTargetPopulationsWillThrow(
   }
 }
 
-export function parseMessageHelloWillThrow(buf: Buffer): MessageHello {
+export function parseMessagePolicyResult(buf: Buffer): MessagePolicyResult {
+  validateCheckSumWillThrow(buf)
+
+  assert.ok(buf.length === 10)
+  const payloadBuf = buf.subarray(5)
+
+  const policy = payloadBuf.readUInt32BE()
+
+  return {
+    type: MessageType.policyResult,
+    policy,
+  }
+}
+
+export function parseMessageOk(buf: Buffer): MessageOk {
+  validateCheckSumWillThrow(buf)
+
+  assert.ok(buf.length === 6)
+  return {
+    type: MessageType.ok,
+  }
+}
+
+export function parseMessageHello(buf: Buffer): MessageHello {
   validateCheckSumWillThrow(buf)
 
   assert.ok(buf.length >= 14)
@@ -213,52 +299,33 @@ export async function* readMessage(
   while (true) {
     console.log("=== while ===")
     try {
-      const typeByte = (await reader.read(1))[0]!
+      const firstBuf = await reader.read(5)
+      const length = firstBuf.readUInt32BE(1)
+      assert.ok(length > 5)
+      const payloadBuf = await reader.read(length - 5)
+      const buf = Buffer.concat([firstBuf, payloadBuf])
+
+      const typeByte = firstBuf[0]
+
       switch (typeByte) {
+        case MessageType.policyResult:
+          {
+            yield parseMessagePolicyResult(buf)
+          }
+          break
         case MessageType.targetPopulations:
           {
-            const lengthBuf = await reader.read(4)
-            const length = lengthBuf.readUint32BE()
-
-            assert.ok(length >= 5)
-            const payloadBuf = await reader.read(length - 5)
+            yield parseMessageTargetPopulations(buf)
           }
           break
         case MessageType.ok:
           {
-            const lengthBuf = await reader.read(4)
-
-            const length = lengthBuf.readUint32BE()
-            assert.ok(length === 6)
-
-            const payloadBuf = await reader.read(1)
-
-            const fullBuf = Buffer.concat([
-              Buffer.from([typeByte]),
-              lengthBuf,
-              payloadBuf,
-            ])
-
-            yield {
-              type: MessageType.ok,
-            }
+            yield parseMessageOk(buf)
           }
           break
         case MessageType.hello:
           {
-            const lengthBuf = await reader.read(4)
-            const length = lengthBuf.readUint32BE()
-
-            assert.ok(length > 5)
-            const payloadBuf = await reader.read(length - 5)
-
-            const fullBuf = Buffer.concat([
-              Buffer.from([typeByte]),
-              lengthBuf,
-              payloadBuf,
-            ])
-
-            yield parseMessageHelloWillThrow(fullBuf)
+            yield parseMessageHello(buf)
           }
           break
       }
