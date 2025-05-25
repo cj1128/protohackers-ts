@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "lodash": "^4.17.21",
+    "p-mutex": "^0.1.0",
     "priorityqueuejs": "^2.0.0",
     "zod": "^3.24.4"
   }

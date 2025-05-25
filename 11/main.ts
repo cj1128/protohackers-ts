@@ -1,4 +1,5 @@
 import { createServer, Socket, createConnection } from "node:net"
+import Mutex from "p-mutex"
 import _ from "lodash"
 import {
   MessageEncoder,
@@ -66,6 +67,7 @@ class Server {
   private site: number
   private readyResolver: any
   private iterator: any
+  private mutexes = new Map()
 
   constructor(site: number) {
     this.site = site
@@ -228,6 +230,9 @@ class Server {
     }
 
     for (const species of tp.keys()) {
+      const mutex = this.getLock(species)
+      await mutex.lock()
+
       // Where a species is not present in the SiteVisit, it means there were no animals of that species observed
       const count = sp.get(species) ?? 0
       const config = tp.get(species)!
@@ -240,10 +245,8 @@ class Server {
         await createPolicy(species, PolicyAction.cull)
       } else {
         const siteP = policyMap.get(site)
-        if (siteP == null) return
-
-        // delete existing policy
-        {
+        if (siteP) {
+          // delete existing policy
           const p = siteP.get(species)
           if (p) {
             await deleteExistingPolicy(p.policy)
@@ -256,6 +259,8 @@ class Server {
           }
         }
       }
+
+      mutex.unlock()
     }
 
     this.log("process done")
@@ -264,6 +269,15 @@ class Server {
   //
   //
   //
+
+  getLock(species: string) {
+    let mutex = this.mutexes.get(species)
+    if (mutex == null) {
+      mutex = new Mutex()
+      this.mutexes.set(species, mutex)
+    }
+    return mutex
+  }
 
   onError(msg: string) {
     this.log("onError: " + msg)
@@ -301,6 +315,8 @@ const server = createServer(async (client) => {
     log("client disconnected")
   })
 
+  client.write(MessageEncoder.hello())
+
   let msgIndex = -1
   for await (const msg of readMessage(client)) {
     msgIndex++
@@ -324,7 +340,6 @@ const server = createServer(async (client) => {
         return
       }
 
-      client.write(MessageEncoder.hello())
       continue
     }
 
