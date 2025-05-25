@@ -49,3 +49,7 @@ Bun + TypeScript, every server is listening on port 8888.
 - **DO NOT** use telent to test the trail server, because telent will send "\r\n" and the server will always give you `illegal method`
 - Need to write a custom client to the server, but it's trivial to do it
 - Actually, the reverse engineering is quite simple,just type `help` and we are good to go
+
+## 11: Pest Control
+
+- how to do concurrent control in NodeJS?

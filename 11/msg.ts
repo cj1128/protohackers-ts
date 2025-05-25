@@ -1,6 +1,8 @@
 import { SocketNoDataError, SocketReader } from "../utils"
 import { createServer, type Socket } from "node:net"
 import assert from "assert"
+import { escapeLeadingUnderscores } from "typescript"
+import type { MessageEventSource } from "bun"
 
 type u32 = number
 type u8 = number
@@ -10,14 +12,20 @@ type Message =
   | MessageOk
   | MessageTargetPopulations
   | MessagePolicyResult
+  | MessageSiteVisit
+  | MessageError
 
+type MessageError = {
+  type: MessageType.error
+  error: string
+}
 type MessageHello = { type: MessageType.hello; protocol: string; version: u32 }
 type MessageOk = { type: MessageType.ok }
 type MessagePolicyResult = {
   type: MessageType.policyResult
   policy: u32
 }
-type MessageSiteVisit = {
+export type MessageSiteVisit = {
   type: MessageType.siteVisit
   site: u32
   populations: PopulationReport[]
@@ -56,6 +64,13 @@ export enum PolicyAction {
 }
 
 export const MessageEncoder = {
+  hello() {
+    return this.encode(
+      MessageType.hello,
+      Buffer.concat([this.str("pestcontrol"), this.u32(1)])
+    )
+  },
+
   deletePolicy(policy: u32) {
     return this.encode(MessageType.deletePolicy, this.u32(policy))
   },
@@ -74,9 +89,40 @@ export const MessageEncoder = {
   dialAuthority(site: number) {
     return this.encode(MessageType.dialAuthority, MessageEncoder.u32(site))
   },
+
+  siteVisit(site: u32, populations: PopulationReport[]) {
+    return this.encode(
+      MessageType.siteVisit,
+      Buffer.concat([
+        this.u32(site),
+        this.arr(
+          populations.map((r) => [r.species, r.count]),
+          ["string", "u32"]
+        ),
+      ])
+    )
+  },
   //
   // helpers
   //
+  arr(data: any[], fields: ("string" | "u32")[]) {
+    let result = this.u32(data.length)
+
+    for (const r of data) {
+      for (let i = 0; i < fields.length; i++) {
+        const field = fields[i]
+        if (field === "string") {
+          result = Buffer.concat([result, this.str(r[i])])
+        } else if (field === "u32") {
+          result = Buffer.concat([result, this.u32(r[i])])
+        } else {
+          throw new Error("invalid field:" + field)
+        }
+      }
+    }
+    return result
+  },
+
   encode(type: u8, payload: Buffer): Buffer {
     // 1 type + 4 length + 1 checksum
     const totalLength = payload.length + 6
@@ -271,6 +317,23 @@ export function parseMessageOk(buf: Buffer): MessageOk {
   }
 }
 
+export function parseMessageError(buf: Buffer): MessageError {
+  validateCheckSumWillThrow(buf)
+
+  assert.ok(buf.length >= 10)
+  const payloadBuf = buf.subarray(5)
+
+  const strLen = payloadBuf.readUInt32BE()
+  assert.ok(strLen === buf.length - 10)
+
+  const error = payloadBuf.subarray(4, 4 + strLen).toString()
+
+  return {
+    type: MessageType.error,
+    error,
+  }
+}
+
 export function parseMessageHello(buf: Buffer): MessageHello {
   validateCheckSumWillThrow(buf)
 
@@ -297,7 +360,7 @@ export async function* readMessage(
   const reader = new SocketReader(socket)
 
   while (true) {
-    console.log("=== while ===")
+    // console.log("=== while ===")
     try {
       const firstBuf = await reader.read(5)
       const length = firstBuf.readUInt32BE(1)
@@ -308,6 +371,11 @@ export async function* readMessage(
       const typeByte = firstBuf[0]
 
       switch (typeByte) {
+        case MessageType.siteVisit:
+          {
+            yield parseMessageSiteVisit(buf)
+          }
+          break
         case MessageType.policyResult:
           {
             yield parseMessagePolicyResult(buf)
@@ -328,10 +396,15 @@ export async function* readMessage(
             yield parseMessageHello(buf)
           }
           break
+        case MessageType.error:
+          {
+            yield parseMessageError(buf)
+          }
+          break
       }
     } catch (err) {
       if (err instanceof SocketNoDataError) {
-        yield { type: "error", msg: "no data in socket" }
+        // yield { type: "error", msg: "no data in socket" }
         return
       }
 

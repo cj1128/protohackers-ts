@@ -21,6 +21,7 @@ export class SocketNoDataError extends Error {}
 export class SocketReader {
   private iter: any
   private buf = new SlidingBufferReader()
+
   constructor(socket: Socket) {
     this.iter = socket[Symbol.asyncIterator]()
   }
@@ -33,6 +34,7 @@ export class SocketReader {
 
       // load more data from socket
       const value = await this.iter.next()
+      // console.log("got buf", { value })
       if (value.done) {
         throw new SocketNoDataError()
       }
