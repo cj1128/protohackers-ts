@@ -1,13 +1,11 @@
 import { SocketNoDataError, SocketReader } from "../utils"
-import { createServer, type Socket } from "node:net"
+import { type Socket } from "node:net"
 import assert from "assert"
-import { escapeLeadingUnderscores } from "typescript"
-import type { MessageEventSource } from "bun"
 
 type u32 = number
 type u8 = number
 
-type Message =
+export type Message =
   | MessageHello
   | MessageOk
   | MessageTargetPopulations

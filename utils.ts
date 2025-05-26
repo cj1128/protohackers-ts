@@ -204,3 +204,11 @@ export function reverseByte(byte: number) {
   byte = ((byte & 0b10101010) >> 1) | ((byte & 0b01010101) << 1)
   return byte
 }
+
+export type Logger = (msg: string, args?: any) => void
+export function createLogger(prefix: string): Logger {
+  // output in one line
+  return function (msg: string, obj?: any) {
+    console.log(prefix, msg, ...(obj ? [JSON.stringify(obj)] : []))
+  }
+}

@@ -52,4 +52,4 @@ Bun + TypeScript, every server is listening on port 8888.
 
 ## 11: Pest Control
 
-- how to do concurrent control in NodeJS?
+- Use [p-mutex](https://github.com/sindresorhus/p-mutex) do to concurrent control
